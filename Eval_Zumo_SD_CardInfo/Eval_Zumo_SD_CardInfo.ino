@@ -38,7 +38,18 @@ SdFile root;
 // Sparkfun SD shield: pin 8
 // RG: pin 8 is correct.
 const int chipSelect = 8;
+/***
+RG: Oy.  The Zumo uses DIO8 for motor right.  That means there's a conflict using pin 8 for the SD card.
+All is not lost.  There are two methods for controlling the Zumobot motors.  I think we're using the PWM inputs
+on pins 9 and 10 rather than pins 7 and 8.
 
+To do: verify that we're using pins 9 and 10.  Then cut pin 8 on the header that goes to the Zumo.
+The solution would probably be to find and cut the line to 8 after ensuring.
+
+Cutting 8 between Zumo and Arduino doesn't look like a great idea.  Maybe more effort with ZumoMotors.cpp would elucidate.
+
+Alternatively, cut and jump between the Arduino and CAN shield.  Table this for now.
+***/
 void setup() {
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
