@@ -11,13 +11,17 @@
  ** MISO - pin 12 on Arduino Uno/Duemilanove/Diecimila
  ** CLK - pin 13 on Arduino Uno/Duemilanove/Diecimila
  ** CS - depends on your SD card shield or module.
- 		Pin 4 used here for consistency with other Arduino examples
+ 
 
 
  created  28 Mar 2011
  by Limor Fried
  modified 9 Apr 2012
  by Tom Igoe
+ Modified Nov 2016
+ by Raj Gandhi -- This works with a Uno compatible and CAN shield (with SD card)
+ It was challenging to FAT32 format the 2Gb card corrctly and make it all work.  
+ 
  */
 // include the SD library:
 #include <SPI.h>
@@ -32,6 +36,7 @@ SdFile root;
 // Arduino Ethernet shield: pin 4
 // Adafruit SD shields and modules: pin 10
 // Sparkfun SD shield: pin 8
+// RG: pin 8 is correct.
 const int chipSelect = 8;
 
 void setup() {
