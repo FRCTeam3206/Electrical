@@ -36,19 +36,24 @@ SdFile root;
 // Arduino Ethernet shield: pin 4
 // Adafruit SD shields and modules: pin 10
 // Sparkfun SD shield: pin 8
-// RG: pin 8 is correct.
-const int chipSelect = 8;
+// RG: pin 8 or 9 are correct for the Sparkfun CAN shield.  I don't know why both work in sw.  According to schematic it is pin 9.
+// RG: cut and jump to make pin 6 work.
+const int chipSelect = 6;
 /***
-RG: Oy.  The Zumo uses DIO8 for motor right.  That means there's a conflict using pin 8 for the SD card.
+RG: The Zumo uses DIO8 for motor right.  That means there's a conflict using pin 8 for the SD card.
 All is not lost.  There are two methods for controlling the Zumobot motors.  I think we're using the PWM inputs
 on pins 9 and 10 rather than pins 7 and 8.
 
 To do: verify that we're using pins 9 and 10.  Then cut pin 8 on the header that goes to the Zumo.
 The solution would probably be to find and cut the line to 8 after ensuring.
+Resolution: Zumo schematic says it is using pins 7, 8, 9 and 10 for motors.
 
-Cutting 8 between Zumo and Arduino doesn't look like a great idea.  Maybe more effort with ZumoMotors.cpp would elucidate.
+Resolution: Cut pin 9 between Arduino and CAN shield.  On CAN shield, solder a jumper between pin 6 and 9.
+Tested and works.  (Zumo pin 6 is guaranteed available because we're using 3 for buzzer.)
 
-Alternatively, cut and jump between the Arduino and CAN shield.  Table this for now.
+Note, there might be more conflicts.  Pin 6 on Zumo is supposed to be for an LCD but we don't have an LCD or plans
+to add one.
+
 ***/
 void setup() {
   // Open serial communications and wait for port to open:
