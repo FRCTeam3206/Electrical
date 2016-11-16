@@ -13,9 +13,21 @@
 
 ZumoBuzzer buzzer;
 Pushbutton button(ZUMO_BUTTON);
-int volume = 15;                //(15 is maximum, 10 isn't very loud)
 
-// To do: move Vbat tones to a separate function.  Try to move button detect to interrupt.
+int volume = 15;                // 15 is maximum, 10 isn't very loud
+struct voltage{                 
+  int ones;                     // This declares a type "voltage" and calls one of them "Vbat".  
+  int tenths;                   // Within the code it should be called Vbat.ones and Vbat.tenths
+} Vbat;  
+
+/* To do: Add a timer to rarely poll Vbat.  Sound an alarm when low voltage.  */
+/* Postpone: Try to move button detect to interrupt.  ==> Not possible without HW change.
+ *  Pushbutton is hardwired to DIO 12.  On an Uno, only DIO pins 2 and 3 can attach to interrupt.
+ *  Pushbutton.h goes to signficant effort to capture a button push event in a polled paradigm.
+ *  It also appears to do a good job of debouncing.  However, it is unlikely that an interrupt 
+ *  wouldn't be superior.  There's lots of code running and it would be ~easy to miss a button
+ *  push event.
+*/
 
 void setup()
 {
@@ -29,41 +41,14 @@ void setup()
 void loop()
 {
 
-  if (button.isPressed())
+  if (button.isPressed())                     // Does this consume too much CPU time?  Would be nice to implement as interrupt.
   {
-    int SensorRead = analogRead(A1);      // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
-    //  int SensorRead = 900;               // fake this input to get the math to  work.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
-    int x = SensorRead * 10.0 / 1024;     // works;  x = 8
-    int y = SensorRead * 10 % 1024;       // works;  trying to make y equal to tenths of a volt
-    y = y + 1024/20;                      // works;  add half a volt to compensate for future trunc  
-    y = y * 10;                           // works;  mult x 10 to compensate for future div
-    y = y / 1024;                         // works;  final div yields tenths of volt
-
-    buzzer.playNote(NOTE_A(6), 100, volume);
-    while (buzzer.isPlaying());
-    buzzer.playNote(NOTE_B(6), 100, volume);
-    while (buzzer.isPlaying());
-    buzzer.playNote(SILENT_NOTE, 500, volume);
-    while (buzzer.isPlaying());
-
-    //static void playNote(unsigned char note, unsigned int duration, unsigned char volume);
-
-    for (int i = 1; i<=x; i++){  
-        buzzer.playNote(NOTE_A(5), 250, volume);
-        while (buzzer.isPlaying());
-        buzzer.playNote(SILENT_NOTE, 250, volume);
-        while (buzzer.isPlaying());
-    }
-    if (y < 1) buzzer.playNote(NOTE_A(2), 250, volume);
-    
-    for (int i = 1; i<=y; i++){  
-        buzzer.playNote(NOTE_B(5), 250, volume);
-        while (buzzer.isPlaying());
-        buzzer.playNote(SILENT_NOTE, 250, volume);
-        while (buzzer.isPlaying());
-    }
-
-   }
+    int sensorRead = analogRead(A1);          // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
+//      int SensorRead = 700;                 // fake this input to get the math to  work.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
+    Vbat = readVbat (sensorRead);
+    playWelcome();
+    playVbat(Vbat);
+  }
 
   
   int throttle = pulseIn(THROTTLE_PIN, HIGH);
@@ -107,3 +92,40 @@ void loop()
 
   ZumoMotors::setSpeeds(left_speed, right_speed);
 }
+
+voltage readVbat (int SensorRead){
+  voltage V;                          //declare V for use inside this function only
+  V.ones = SensorRead * 10.0 / 1024;  // works;
+  int y = SensorRead * 10 % 1024;     // works;  trying to make y equal to tenths of a volt
+  y = y + 1024/20;                    // works;  add half a volt to compensate for future trunc  
+  y = y * 10;                         // works;  mult x 10 to compensate for future div
+  V.tenths = y / 1024;                // works;  final div yields tenths of volt
+  return V; 
+}
+
+void playWelcome () {
+    buzzer.playNote(NOTE_A(6), 100, volume);
+    while (buzzer.isPlaying());
+    buzzer.playNote(NOTE_B(6), 100, volume);
+    while (buzzer.isPlaying());
+    buzzer.playNote(SILENT_NOTE, 500, volume);
+    while (buzzer.isPlaying());
+}
+
+void playVbat (voltage Vbat){
+      for (int i = 1; i <= Vbat.ones; i++){  
+        buzzer.playNote(NOTE_A(5), 200, volume);
+        while (buzzer.isPlaying());
+        buzzer.playNote(SILENT_NOTE, 100, volume);
+        while (buzzer.isPlaying());
+    }
+    //if (Vbat.tenths < 1) buzzer.playNote(NOTE_A(2), 250, volume);
+    
+    for (int i = 1; i < Vbat.tenths; i++){  
+        buzzer.playNote(NOTE_B(5), 200, volume);
+        while (buzzer.isPlaying());
+        buzzer.playNote(SILENT_NOTE, 100, volume);
+        while (buzzer.isPlaying());
+    }
+}
+

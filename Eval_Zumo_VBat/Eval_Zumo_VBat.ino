@@ -9,17 +9,23 @@
 
 ZumoBuzzer buzzer;
 Pushbutton button(ZUMO_BUTTON);
-int volume = 15;                //(15 is maximum, 10 isn't very loud)
+int volume = 15;                //(15 is maximum loud, 10 isn't very loud)
+struct voltage{                 // This declares a type "voltage" and calls one of them "Vbat".  
+  int ones;                     // Within the code it should be called Vbat.ones and Vbat.tenths
+  int tenths;
+} Vbat;  
 
 void setup()                    // run once, when the sketch starts
 {
-//  Serial.begin(9600);
+  Serial.begin(9600);
 }
 
 void loop()                     // run over and over again
 {
-  int SensorRead = analogRead(A1);      // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
-//  int SensorRead = 900;               // fake this input to get the math to  work.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
+  int z;
+  
+//  int SensorRead = analogRead(A1);      // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
+  int SensorRead = 700;               // fake this input to get the math to  work.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
   int x = SensorRead * 10.0 / 1024;     // works;  x = 8
   int y = SensorRead * 10 % 1024;       // works;  trying to make y equal to tenths of a volt
   y = y + 1024/20;                      // works;  add half a volt to compensate for future trunc  
@@ -28,8 +34,10 @@ void loop()                     // run over and over again
   
   delay (500);
 
-//Serial.println(x);
-//Serial.println(y);
+  Vbat = readVbat(56);
+Serial.print(x); Serial.print("."); Serial.println(y);
+Serial.print(Vbat.ones); Serial.print("."); Serial.println(Vbat.tenths);
+
 
   if (button.isPressed())
   {
@@ -56,8 +64,14 @@ void loop()                     // run over and over again
         buzzer.playNote(SILENT_NOTE, 250, volume);
         while (buzzer.isPlaying());
     }
-
    }
-  
 }
+
+voltage readVbat (int sensorValue){
+  voltage V; //declare V for use inside this function only
+  V.ones = sensorValue;
+  V.tenths = sensorValue / 10;
+  return V; 
+}
+
 
