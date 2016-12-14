@@ -342,6 +342,22 @@
 <text x="-15.621" y="-6.35" size="1.778" layer="25" ratio="10" rot="R90">&gt;NAME</text>
 <text x="-12.065" y="-0.889" size="1.778" layer="27" ratio="10">&gt;VALUE</text>
 </package>
+<package name="JUMP-3">
+<description>Solder &lt;b&gt;JUMPER&lt;/b&gt;</description>
+<wire x1="-2.032" y1="-0.889" x2="2.032" y2="-0.889" width="0.1524" layer="21"/>
+<wire x1="2.032" y1="0.889" x2="2.032" y2="-0.889" width="0.1524" layer="21"/>
+<wire x1="2.032" y1="0.889" x2="-2.032" y2="0.889" width="0.1524" layer="21"/>
+<wire x1="-2.032" y1="-0.889" x2="-2.032" y2="0.889" width="0.1524" layer="21"/>
+<smd name="1" x="-1.397" y="0" dx="1.016" dy="1.524" layer="1"/>
+<smd name="2" x="0" y="0" dx="0.762" dy="1.524" layer="1"/>
+<smd name="3" x="1.397" y="0" dx="1.016" dy="1.524" layer="1"/>
+<text x="-2.032" y="1.27" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="0" y="-0.4" size="0.01" layer="27">&gt;VALUE</text>
+<rectangle x1="0.889" y1="-0.762" x2="1.905" y2="0.762" layer="51"/>
+<rectangle x1="-0.381" y1="-0.762" x2="0.381" y2="0.762" layer="51"/>
+<rectangle x1="-1.905" y1="-0.762" x2="-0.889" y2="0.762" layer="51"/>
+<rectangle x1="-2.032" y1="-0.889" x2="2.032" y2="0.889" layer="29"/>
+</package>
 </packages>
 <symbols>
 <symbol name="MP26123">
@@ -568,6 +584,15 @@
 <wire x1="2.54" y1="-30.48" x2="-20.32" y2="-30.48" width="0.254" layer="94"/>
 <wire x1="-20.32" y1="-30.48" x2="-20.32" y2="30.48" width="0.254" layer="94"/>
 </symbol>
+<symbol name="JUMP-3">
+<pin name="P$1" x="-5.08" y="0" length="middle"/>
+<pin name="P$2" x="12.7" y="5.08" length="middle" rot="R180"/>
+<pin name="P$3" x="-5.08" y="10.16" length="middle"/>
+<wire x1="0" y1="12.7" x2="0" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="0" y1="-2.54" x2="7.62" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="7.62" y1="-2.54" x2="7.62" y2="12.7" width="0.254" layer="94"/>
+<wire x1="7.62" y1="12.7" x2="0" y2="12.7" width="0.254" layer="94"/>
+</symbol>
 </symbols>
 <devicesets>
 <deviceset name="IC-MP26123" prefix="U" uservalue="yes">
@@ -767,7 +792,6 @@ Wide Range I2C Power Monitor</description>
 <connect gate="G$1" pin="ADR1" pad="P$3"/>
 <connect gate="G$1" pin="ALERT" pad="P$10"/>
 <connect gate="G$1" pin="GND" pad="P$6"/>
-<connect gate="G$1" pin="GND2" pad="P$13"/>
 <connect gate="G$1" pin="INTVCC" pad="P$2"/>
 <connect gate="G$1" pin="SCL" pad="P$7"/>
 <connect gate="G$1" pin="SDAI" pad="P$8"/>
@@ -813,6 +837,23 @@ Wide Range I2C Power Monitor</description>
 <connect gate="G$1" pin="P$7" pad="7"/>
 <connect gate="G$1" pin="P$8" pad="8"/>
 <connect gate="G$1" pin="P$9" pad="9"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="JUMP-3">
+<gates>
+<gate name="G$1" symbol="JUMP-3" x="-12.7" y="-5.08"/>
+</gates>
+<devices>
+<device name="" package="JUMP-3">
+<connects>
+<connect gate="G$1" pin="P$1" pad="1"/>
+<connect gate="G$1" pin="P$2" pad="2"/>
+<connect gate="G$1" pin="P$3" pad="3"/>
 </connects>
 <technologies>
 <technology name=""/>
