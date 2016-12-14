@@ -4,6 +4,7 @@
 
 #define THROTTLE_PIN   4 // throttle channel from RC receiver
 #define STEERING_PIN   5 // steering channel from RC receiver
+#define LASER_PIN     11 // laser pointers pin (they share one pin)
 #define LED_PIN       13 // user LED pin
 
 #define MAX_SPEED             800 // max motor speed
@@ -29,10 +30,14 @@ struct voltage{
  *  push event.
 */
 
+byte laserIntensity[] = {0, 5, 165};
+int laserIntensityIndex = 1; // start dim
+
 void setup()
 {
   pinMode(LED_PIN, OUTPUT);
-
+  analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex]); 
+  
   // uncomment one or both of the following lines if your motors' directions need to be flipped
   //motors.flipLeftMotor(true);
   //motors.flipRightMotor(true);
@@ -43,6 +48,7 @@ void loop()
 
   if (button.isPressed())                     // Does this consume too much CPU time?  Would be nice to implement as interrupt.
   {
+    analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex % sizeof(laserIntensity)]); laserIntensityIndex++;
     int sensorRead = analogRead(A1);          // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
 //      int SensorRead = 700;                 // fake this input to get the math to  work.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
     Vbat = readVbat (sensorRead);
