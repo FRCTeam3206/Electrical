@@ -20,8 +20,13 @@ struct voltage{
   int ones;                     // This declares a type "voltage" and calls one of them "Vbat".  
   int tenths;                   // Within the code it should be called Vbat.ones and Vbat.tenths
 } Vbat;  
+unsigned long timeElapsed = 0;
 
-/* To do: Add a timer to rarely poll Vbat.  Sound an alarm when low voltage.  */
+/* To do: Add a timer to rarely poll Vbat.  Sound an alarm when low voltage.  
+millis() is elapsed time since turn-on.  It is unsigned long so will take 50 days to reset.
+Try to use this to check voltage every 10s or so.
+*/
+
 /* Postpone: Try to move button detect to interrupt.  ==> Not possible without HW change.
  *  Pushbutton is hardwired to DIO 12.  On an Uno, only DIO pins 2 and 3 can attach to interrupt.
  *  Pushbutton.h goes to signficant effort to capture a button push event in a polled paradigm.
@@ -31,7 +36,7 @@ struct voltage{
 */
 
 byte laserIntensity[] = {0, 5, 165};
-int laserIntensityIndex = 1; // start dim
+int laserIntensityIndex = 2; // start bright
 
 void setup()
 {
@@ -45,10 +50,27 @@ void setup()
 
 void loop()
 {
-
+  if ((millis() - timeElapsed) > 5000)
+  {
+    playWelcome();
+    int sensorRead = analogRead(A1);
+    Vbat = readVbat (sensorRead);
+      if (Vbat.ones < 8)
+      {
+        analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex % sizeof(laserIntensity)]); laserIntensityIndex++;    
+        playVbat(Vbat);
+      }
+      else
+      {
+        analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex]); 
+      }
+    timeElapsed = millis();
+  }
+  
   if (button.isPressed())                     // Does this consume too much CPU time?  Would be nice to implement as interrupt.
   {
-    analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex % sizeof(laserIntensity)]); laserIntensityIndex++;
+//    analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex % sizeof(laserIntensity)]); laserIntensityIndex++;
+// changing laser intensity worked but want to use brightness as battery indicator
     int sensorRead = analogRead(A1);          // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
 //      int SensorRead = 700;                 // fake this input to get the math to  work.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
     Vbat = readVbat (sensorRead);
