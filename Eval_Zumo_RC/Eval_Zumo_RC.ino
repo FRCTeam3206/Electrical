@@ -8,9 +8,11 @@
 #define LED_PIN       13 // user LED pin
 
 #define MAX_SPEED             800 // max motor speed
-#define PULSE_WIDTH_DEADBAND   25 // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
+#define K_SPEED               50  // speed multiplier to decrease max speed in a different way.
+#define K_STEERING            20  // speed multiplier to decrease max speed in a different way.
+#define PULSE_WIDTH_DEADBAND  25  // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
 #define PULSE_WIDTH_RANGE     350 // pulse width difference from 1500 us to be treated as full scale input (for example, a value of 350 means
-                                  //   any pulse width <= 1150 us or >= 1850 us is considered full scale)
+                                  //  any pulse width <= 1150 us or >= 1850 us is considered full scale)
 
 ZumoBuzzer buzzer;
 Pushbutton button(ZUMO_BUTTON);
@@ -21,11 +23,8 @@ struct voltage{
   int tenths;                   // Within the code it should be called Vbat.ones and Vbat.tenths
 } Vbat;  
 unsigned long timeElapsed = 0;
-
-/* To do: Add a timer to rarely poll Vbat.  Sound an alarm when low voltage.  
-millis() is elapsed time since turn-on.  It is unsigned long so will take 50 days to reset.
-Try to use this to check voltage every 10s or so.
-*/
+unsigned long timeRSL = 0;
+bool RSL = false;
 
 /* Postpone: Try to move button detect to interrupt.  ==> Not possible without HW change.
  *  Pushbutton is hardwired to DIO 12.  On an Uno, only DIO pins 2 and 3 can attach to interrupt.
@@ -42,23 +41,30 @@ void setup()
 {
   pinMode(LED_PIN, OUTPUT);
   analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex]); 
-  
+
+  timeRSL = millis();
   // uncomment one or both of the following lines if your motors' directions need to be flipped
-  //motors.flipLeftMotor(true);
-  //motors.flipRightMotor(true);
+  // RG: motor flip doesn't work currently
+  // motors.flipLeftMotor(true);
+  // motors.flipRightMotor(true);
 }
 
 void loop()
-{
-  if ((millis() - timeElapsed) > 5000)
+{   
+ /* 
+  *  Automatically polls battery voltage and beeps if low bat.  
+  *  To do: make laser pointers fixed intensity.  Consider what is happening below, probably turn off lasers if low bat.
+  */
+
+  if ((millis() - timeElapsed) > 30000) // Poll voltage very 30 seconds
   {
-    playWelcome();
+    //    playWelcome(); useful for debugging
     int sensorRead = analogRead(A1);
     Vbat = readVbat (sensorRead);
-      if (Vbat.ones < 8)
+      if (Vbat.ones < 6) // 6V is low; 5.6 would be dangerously low
       {
         analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex % sizeof(laserIntensity)]); laserIntensityIndex++;    
-        playVbat(Vbat);
+        playVbat(Vbat);  // play battery voltage in tones to help identify issue.
       }
       else
       {
@@ -66,35 +72,61 @@ void loop()
       }
     timeElapsed = millis();
   }
-  
+
+/*  
+  *  Manuall poll battery voltage and beeps battery voltage in code.  
+ */
   if (button.isPressed())                     // Does this consume too much CPU time?  Would be nice to implement as interrupt.
   {
-//    analogWrite (LASER_PIN, laserIntensity[laserIntensityIndex % sizeof(laserIntensity)]); laserIntensityIndex++;
-// changing laser intensity worked but want to use brightness as battery indicator
     int sensorRead = analogRead(A1);          // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
-//      int SensorRead = 700;                 // fake this input to get the math to  work.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
+//      int SensorRead = 700;                 // uncomment this input to test the math.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
     Vbat = readVbat (sensorRead);
     playWelcome();
     playVbat(Vbat);
   }
 
-  
-  int throttle = pulseIn(THROTTLE_PIN, HIGH);
-  int steering = pulseIn(STEERING_PIN, HIGH);
+/*
+ * RSL : LED on in 13 indicates health.
+ * ToDo: Finish full implementation of five RSL states
+ * ToDo: Refactor the code so main is cleaner, put subroutines at end
+ */
 
-  int left_speed, right_speed;
-
-
-
-  if (throttle > 0 || steering > 0)
-  {
-    // both RC signals are good; turn on LED
+  if (millis() - timeRSL > 1000) {    
+    RSL = not(RSL); 
+    timeRSL = millis();
+  }
+  if (RSL)
     digitalWrite(LED_PIN, HIGH);
+  else
+    digitalWrite(LED_PIN, LOW);
+
+/*  
+ *   RC input and motor output
+ */
+  int throttle = pulseIn(THROTTLE_PIN, HIGH);  // Read throttle input
+  int steering = pulseIn(STEERING_PIN, HIGH);  // Read steering input
+  int left_speed, right_speed;                 // Variables for motor outputs
+
+  if (throttle > 0 || steering > 0) // To do: why is this an OR?
+  {
+    
+    // both RC signals are good; turn on LED
+//    digitalWrite(LED_PIN, HIGH);  //To do: change this feature into an RSL
 
     // RC signals encode information in pulse width centered on 1500 us (microseconds); subtract 1500 to get a value centered on 0
-    throttle -= 1500;
-    steering -= 1500;
+    //    steering -= 1500;  // Orig method
+    //    throttle -= 1500;   // Orig method
 
+    if (throttle > 1500)
+       throttle = (-(throttle - 1500));// * K_SPEED/100;
+    else
+       throttle = (1500 - throttle);// * K_SPEED/100;
+
+    if (steering > 1500)
+       steering = (-(steering - 1500)) * K_STEERING/100;  // Steering was too sensitive so multiply by constant to reduce sensitivity
+    else
+       steering = (1500 - steering) * K_STEERING/100;
+  
     // apply deadband
     if (abs(throttle) <= PULSE_WIDTH_DEADBAND)
       throttle = 0;
@@ -112,7 +144,7 @@ void loop()
   else
   {
     // at least one RC signal is not good; turn off LED and stop motors
-    digitalWrite(LED_PIN, LOW);
+//    digitalWrite(LED_PIN, LOW);
 
     left_speed = 0;
     right_speed = 0;
