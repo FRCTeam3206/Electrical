@@ -29,6 +29,7 @@ struct voltage{                 // This defines a new data type similar to an ar
 unsigned long timeElapsed = 0;  // Is this a global variable?
 unsigned long timeRSL = 0;
 bool RSL = false;
+bool flagLowVbat = false;
 
 /* Postpone: Try to move button detect to interrupt.  ==> Not possible without HW change!
  *  Pushbutton is hardwired to DIO 12.  On an Uno, only DIO pins 2 and 3 can attach to interrupt.
@@ -54,15 +55,7 @@ void setup()
 
 void loop()
 {   
-// To do: combine duplicate Vbat code in auto and manual.
-
-  timeElapsed = pollVbat(timeElapsed);  // Auto poll Vbat. Beeps if low.  
-
-  if (button.isPressed()) {
-    playWelcome();
-    manVbat();    // Manually query Vbat.
-  }
-
+  checkVbat();                          // Check battery voltage if button is pressed or 30s elapsed.
   timeRSL = indicatorRSL(timeRSL);      // RSL is health state indicator   
 
 /*  
@@ -105,8 +98,8 @@ void loop()
   }
   else
   {
+    // To do: this probably isn't an accurate comment or the desired behavior.
     // at least one RC signal is not good; turn off LED and stop motors
-//    digitalWrite(LED_PIN, LOW);
 
     left_speed = 0;
     right_speed = 0;
@@ -115,11 +108,6 @@ void loop()
   ZumoMotors::setSpeeds(left_speed, right_speed);
 }
 
-
-/*
- * To do: Combine SensorRead into this function.
- */
- 
 voltage readVbat (){
   voltage V;                          // declare V for use inside this function only
   int sensorRead = analogRead(A1);
@@ -156,20 +144,28 @@ void playVbat (voltage Vbat){
     }
 }
 
-unsigned long pollVbat (unsigned long timeElapsedLocal){
-    if ((millis() - timeElapsedLocal) > 30000) // Poll voltage very 30 seconds
-    {
-      // playWelcome(); // useful for debugging
- //     int sensorRead = analogRead(A1);
-      Vbat = readVbat ();
-        if (Vbat.ones < 6) // 6V is low; 5.6 would be dangerously low
-        {
-          analogWrite (LASER_PIN, 0);    
-          playVbat(Vbat);  // play battery voltage in tones to help identify low bat
-        }
-      timeElapsedLocal = millis();
-    }
-    return timeElapsedLocal;
+void  checkVbat() {
+  bool flagManVbat = false;           // local variable
+  bool flagAutoVbat = false;          // local variable
+
+  if (button.isPressed()) {
+    playWelcome();                    // play welcome tones to acknowledge button press
+    flagManVbat = true;
+  }
+  if ((millis() - timeElapsed) > 30000) { // Poll voltage very 30 seconds
+    flagAutoVbat = true;
+  }
+  if (flagManVbat or flagAutoVbat) {
+     Vbat = readVbat();               // Read battery voltage
+     if (Vbat.ones < 6) {             // 6V is low; 5.6 would be dangerously low
+       if (not(flagLowVbat)){
+         analogWrite (LASER_PIN, 0);  // Turn off laser pointers to save power.
+         flagLowVbat = true;          // This is global variable prevents unnecessary re-writes to laser
+       }
+     }
+    timeElapsed = millis();
+    if ((flagLowVbat and flagAutoVbat) or flagManVbat) playVbat(Vbat);  // Beep out battery voltage.
+  }
 }
 
 /*
@@ -187,13 +183,3 @@ unsigned long indicatorRSL (unsigned long timeRSLLocal){
   else
     digitalWrite(LED_PIN, LOW);
 }
-
-void manVbat(){
-//    playWelcome();
-//    int sensorRead = analogRead(A1);          // there's a 1/2 hardware voltage divider, a max read of 1023 corresponds to 10V
-//    int SensorRead = 700;                 // uncomment this input to test the math.  900 is about 8.789V, 800 is 7.813V, 700 is 6.836V
-//    Vbat = readVbat (sensorRead);
-    Vbat = readVbat();
-    playVbat(Vbat);
-}
-
