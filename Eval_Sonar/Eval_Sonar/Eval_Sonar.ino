@@ -23,7 +23,7 @@ Uses ultrasonic transducer XL-MaxSonar MB1200.
 // These constants won't change. They're used to give names to the pins used:
 const int analogInPin = A0;  // Analog input pin that the potentiometer is attached to
 const byte PIXEL_PIN = 6;      // Digital IO pin connected to the NeoPixels.
-const byte PIXEL_COUNT = 6;    // Number of RGB NeoPixel LEDs
+const byte PIXEL_COUNT = 4;    // Number of RGB NeoPixel LEDs
 
 // Parameter 1 = number of pixels in "strip"
 // Parameter 2 = pin number (most are valid)
@@ -69,11 +69,11 @@ void loop() {
   Serial.print(sensorValue);
   Serial.print("\t output = ");
   Serial.print(outputValue);
-  Serial.print("cm");
+  Serial.print("cm");/**/
   
   if (outputValue < threshold)  // sonar distance threshold
   {
-    for (int i = 1; i < blinks; i++){
+    for (int j = 1; j < blinks; j++){
       for (int i = 0; i < PIXEL_COUNT; i++){
         strip.setPixelColor(i, 255, 0, 255); 
       }
@@ -81,7 +81,7 @@ void loop() {
       strip.show();                      // Sends updated pixel color to hardware.
       delay(100);
 //      strip.setBrightness(1);
-      for (int i = 1; i < PIXEL_COUNT; i++){
+      for (int i = 0; i < PIXEL_COUNT; i++){
         strip.setPixelColor(i, 2, 0, 2); 
       }
       strip.show();                      // Sends updated pixel color to hardware.
@@ -93,7 +93,7 @@ void loop() {
     delay (100);
   }
  Serial.print("\t color value = ");
-   Serial.println(color);
+ Serial.println(color);
   
 }
 
