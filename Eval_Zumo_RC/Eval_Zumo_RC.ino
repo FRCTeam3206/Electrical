@@ -8,7 +8,7 @@
 #define LED_PIN       13 // user LED pin
 
 #define MAX_SPEED             400 // max motor speed; actual max is 400
-#define K_STEERING            0.65 // speed multiplier to decrease steering sensitivity.  0.6 gives about a 9" turn radius at max throttle
+#define K_STEERING            0.65 // speed multiplier to decrease steering sensitivity.  0.65 gives about a 4" turn radius at max throttle
 #define PULSE_WIDTH_DEADBAND  25  // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
 #define PULSE_WIDTH_RANGE     400 // pulse width difference from 1500 us to be treated as full scale input (for example, a value of 350 means
                                   //  any pulse width <= 1150 us or >= 1850 us is considered full scale)
@@ -19,12 +19,12 @@ ZumoBuzzer buzzer;              // Enables the Zumo buzzer.
 Pushbutton button(ZUMO_BUTTON); // Enables the Zumo button.
 
 int volume = 15;                // 15 is maximum, 10 isn't very loud
-long K_SPEED = 8.0;             // Useful range < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way. 
+long K_SPEED = 8.0;             // Useful range 2 < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way. 
 struct voltage{                 // This defines a new data type similar to an array with two int elements.
   int ones;                     // This declares a type "voltage" and calls one of them "Vbat".  
   int tenths;                   // Within the code it should be called Vbat.ones and Vbat.tenths
 } Vbat;  
-unsigned long timeElapsed = 0;  // Is this a global variable?
+unsigned long timeElapsed = 0;
 unsigned long timeRSL = 0;
 bool RSL = false;
 bool flagLowVbat = false;
