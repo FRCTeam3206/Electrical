@@ -11,13 +11,16 @@ Servo auxMotor;
 #define RIGHT_MOTOR_PIN  10  // confirmed pin 10 is pwm output
 #define AUX_MOTOR_PIN    11  // confirmed pin 11 is pwm output
 
-#define PULSE_WIDTH_DEADBAND  40  // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
-
+#define PULSE_WIDTH_DEADBAND  40      // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
+#define K_STEERING            0.50    // speed multiplier to decrease steering sensitivity.  0.65 gives about a 4" turn radius at max throttle
+#define K_SPEED               8.0    // Useful range 2 < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way. 
 
 const int MAX_SPEED = 500;        // This corresponds to a range of 1000 to 2000
-
-const bool debugOn = false;        // The overhead required by serial and delays would be bad for RC control. 
+const bool debugOn = false;       // The overhead required by serial and delays would be bad for RC control. 
                                   // Make it easy to disable.
+
+long accelLimitedThrottle;        // Range will be +/- 500.  No real value to give it an initial value?
+
 int left_speed;
 int right_speed;
 int l_speed; 
@@ -41,6 +44,9 @@ void loop()
   int steering = pulseIn(STEERING_PIN, HIGH);  // Read steering input.  Normally 1000 to 2000
   int aux = pulseIn(AUX_PIN, HIGH);            // Read aux input.  Either ~1000 or ~2000 (basically binary)
 
+
+//  accelLimitedThrottle = (accelLimitedThrottle/K_SPEED*(K_SPEED-1.0)) + throttle/K_SPEED;   
+
 /*  
  *   Print RC pulse widths to Serial Monitor
  */
@@ -51,7 +57,7 @@ void loop()
     Serial.print(steering);
     Serial.print(", Aux = ");
     Serial.println(aux);
-    delay(500);        // delay between reads for stability; only necessary with serial
+    delay(1000);        // delay between reads for stability; only necessary with serial
   }
 
 /*
@@ -61,13 +67,24 @@ void loop()
   if ((900 < throttle)&& (throttle < 2100) && (900 < steering) && (steering < 2100)){
      if (debugOn) Serial.println("Yay!");
 
-     // Normalize throttle and steering to the range of -500 to +500.
-     int throttleNorm = throttle - 1500;
-     int steeringNorm = steering - 1500;
     
+     // Normalize throttle and steering to the range of -500 to +500.
+     long throttleNorm = throttle - 1500;
+     long steeringNorm = steering - 1500;
+    if (debugOn) Serial.println(steeringNorm);    
+
+   
+     steeringNorm = steeringNorm * K_STEERING;                                 // Apply simple scaling to keep steering reasonable
+     accelLimitedThrottle = (accelLimitedThrottle/K_SPEED*(K_SPEED-1.0)) + throttleNorm/K_SPEED;   
+    
+    if (debugOn) Serial.println(K_SPEED);    
+    if (debugOn) Serial.println(steeringNorm);    
+    if (debugOn) Serial.println(K_STEERING);    
+ 
+
      // Mix throttle and steering inputs to obtain left & right motor speeds
-     left_speed = throttleNorm - steeringNorm;
-     right_speed = throttleNorm + steeringNorm;
+     left_speed = accelLimitedThrottle - steeringNorm;
+     right_speed = accelLimitedThrottle + steeringNorm;
 
      // Cap speeds to max
      left_speed = min(max(left_speed, -MAX_SPEED), MAX_SPEED);  // max is 500
