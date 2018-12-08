@@ -11,10 +11,10 @@ Servo auxMotor;
 #define RIGHT_MOTOR_PIN  10  // confirmed pin 10 is pwm output
 #define AUX_MOTOR_PIN    11  // confirmed pin 11 is pwm output
 
-#define PULSE_WIDTH_DEADBAND  35  // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
+#define PULSE_WIDTH_DEADBAND  40  // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
 
 
-const int MAX_SPEED = 450;        // This corresponds to a range of 1000 to 2000
+const int MAX_SPEED = 500;        // This corresponds to a range of 1000 to 2000
 
 const bool debugOn = false;        // The overhead required by serial and delays would be bad for RC control. 
                                   // Make it easy to disable.
@@ -59,7 +59,7 @@ void loop()
  */
  
   if ((900 < throttle)&& (throttle < 2100) && (900 < steering) && (steering < 2100)){
-     if (debugOn) Serial.println("Yay!");    
+     if (debugOn) Serial.println("Yay!");
 
      // Normalize throttle and steering to the range of -500 to +500.
      int throttleNorm = throttle - 1500;
@@ -84,17 +84,17 @@ void loop()
    }
 
     if (abs(left_speed) > PULSE_WIDTH_DEADBAND){
-       l_speed = map(left_speed, -500, 500, 10, 170); // Note, this is not full-range; cal later
+       l_speed = map(left_speed, -500, 500, 1000, 2000); 
     }
     else{
-       l_speed = 90; // This should be neutral, no speed
+       l_speed = 1500; // This should be neutral, no speed.  If it is in the deadband then call it neutral.
     }
 
     if (abs(right_speed) > PULSE_WIDTH_DEADBAND){
-       r_speed = map(right_speed, -500, 500, 10, 170); // Note, this is not full-range; cal later
+       r_speed = map(right_speed, -500, 500, 1000, 2000); 
     }
     else{
-       r_speed = 90; // This should be neutral, no speed
+       r_speed = 1500; // This should be neutral, no speed
     }
 
     if (debugOn) {
@@ -104,6 +104,6 @@ void loop()
       Serial.println(r_speed);     
     }
 
-    leftMotor.write(l_speed);       
-    rightMotor.write(r_speed);       
+    leftMotor.writeMicroseconds(l_speed);       
+    rightMotor.writeMicroseconds(r_speed);       
 }
