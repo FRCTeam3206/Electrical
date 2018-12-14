@@ -4,6 +4,7 @@ Servo leftMotor;
 Servo rightMotor;
 Servo auxMotor;
 
+//Pin Definitions
 #define STEERING_PIN      3  // steering channel from RC receiver
 #define THROTTLE_PIN      4  // throttle channel from RC receiver
 #define AUX_PIN           5  // aux channel from RC receiver
@@ -11,6 +12,7 @@ Servo auxMotor;
 #define RIGHT_MOTOR_PIN  10  // confirmed pin 10 is pwm output
 #define AUX_MOTOR_PIN    11  // confirmed pin 11 is pwm output
 
+// Constants
 #define PULSE_WIDTH_DEADBAND  40      // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
 #define K_STEERING            0.50    // speed multiplier to decrease steering sensitivity.  0.65 gives about a 4" turn radius at max throttle
 #define K_SPEED               8.0    // Useful range 2 < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way. 
@@ -19,6 +21,7 @@ const int MAX_SPEED = 500;        // This corresponds to a range of 1000 to 2000
 const bool debugOn = false;       // The overhead required by serial and delays would be bad for RC control. 
                                   // Make it easy to disable.
 
+// Variables
 long accelLimitedThrottle;        // Range will be +/- 500.  No real value to give it an initial value?
 
 int left_speed;
