@@ -19,51 +19,56 @@ Servo rightRearMotor;
 #define RIGHT_REAR_MOTOR_PIN   12  // this pin is not PWM output; to do: confirm functionality 
 
 // Constants
-#define PULSE_WIDTH_DEADBAND    40      // pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
-
+#define PULSE_WIDTH_DEADBAND    25    // Pulse width difference from 1500 us (microseconds) to ignore (to compensate for control centering offset)
 const int MAX_SPEED = 500;            // This corresponds to a range of 1000 to 2000
-const bool debugOn = false;            // The overhead required by serial and delays would be bad for RC control. 
-const int NEUTRAL = 1500;                                      // Make it easy to disable.
-const float K_Rotate = 0.5;
-const float K_Drive = 0.75;
-const float K_Strafe = 0.75;
-
-// Variables
-//long accelLimitedThrottle;        // Range will be +/- 500.  No real value to give it an initial value?
-
-int left_speed;
-int right_speed;
-int l_speed; 
-int r_speed;
+const bool debugOn = false;           // The overhead required by serial and delays would be bad for RC control. Easy to disable.
+const int NEUTRAL    = 1500;
 
 void setup()                        
 {
-//  if (debugOn) Serial.begin(9600);    // initialize serial communication at 9600 bits per second
+  if (debugOn) Serial.begin(9600);    // initialize serial communication at 9600 bits per second
+  leftFrontMotor.attach(LEFT_FRONT_MOTOR_PIN, 1000, 2000);  // 1000 = min value, 2000 = max value
+  rightFrontMotor.attach(RIGHT_FRONT_MOTOR_PIN, 1000, 2000);               
+  leftRearMotor.attach(LEFT_REAR_MOTOR_PIN, 1000, 2000); 
+  rightRearMotor.attach(RIGHT_REAR_MOTOR_PIN, 1000, 2000);               
 
-  leftFrontMotor.attach(LEFT_FRONT_MOTOR_PIN); 
-  rightFrontMotor.attach(RIGHT_FRONT_MOTOR_PIN);               
-  leftRearMotor.attach(LEFT_REAR_MOTOR_PIN); 
-  rightRearMotor.attach(RIGHT_REAR_MOTOR_PIN);               
+// Perform a quick motor check.  This setup is prone to wires falling out.  This will spin each
+// gearbox briefly.
+    leftFrontMotor.writeMicroseconds(1650);       
+      delay(200);
+    leftFrontMotor.writeMicroseconds(1500);       
+      delay(500);
+    rightFrontMotor.writeMicroseconds(1350);       
+      delay(200);
+    rightFrontMotor.writeMicroseconds(1500);       
+      delay(500);
+    leftRearMotor.writeMicroseconds(1650);       
+      delay(200);
+    leftRearMotor.writeMicroseconds(1500);       
+      delay(500);
+    rightRearMotor.writeMicroseconds(1350);       
+      delay(200);
+    rightRearMotor.writeMicroseconds(1500);       
 }
 
 void loop()
 {   
-/*  
- *   RC input
+/*  RC input                       
  */
-  int RightX    = pulseIn(7, HIGH);      // Plan to use this for Robot spin
+  int RightX    = pulseIn(7, HIGH);       // Robot spin
  // int RightY    = pulseIn(2, HIGH); 
-  int LeftY     = pulseIn(3, HIGH);       // Plan to use this for Robot X
-  int LeftX     = pulseIn(4, HIGH);       // Plan to use this for Robot Y
-//  int RightKnob = pulseIn(5, HIGH);  
-//  int LeftKnob  = pulseIn(6, HIGH);  
+  int LeftY     = pulseIn(3, HIGH);       // Robot Y
+  int LeftX     = pulseIn(4, HIGH);       // Robot X
+  int RightKnob = pulseIn(5, HIGH);       // K_Rotate
+  int LeftKnob  = pulseIn(6, HIGH);       // K_Strafe
 
-  if ((900 < LeftX)&& (LeftX < 2100) && (900 < LeftY) && (LeftY < 2100) && (900 < RightX) && (RightX < 2100)){
-
-/*  
- *   Print RC pulse widths to Serial Monitor
+/*  Important! The sw confirms communication to the controller before turning on any motors.
+ *  If any input is bogus then stop motors. 
  */
- 
+
+  if (( 900 < LeftX ) && ( LeftX < 2100 ) && ( 900 < LeftY ) && ( LeftY < 2100 ) && ( 900 < RightX ) && ( RightX < 2100 )){
+
+//  Print RC pulse widths to Serial Monitor 
   if (debugOn) {
     Serial.print("Left Y = ");
     Serial.print(LeftY);
@@ -73,57 +78,45 @@ void loop()
     Serial.println(RightX);
 //    Serial.print(", Right Y = ");
 //    Serial.print(RightY);
-//    Serial.print(", Aux Knob Right = ");
-//    Serial.print(RightKnob);
-//    Serial.print(", Aux Knob Left = ");
-//    Serial.println(LeftKnob);
-//    delay(1000);                        // delay between writes to serial monitor
+    Serial.print(", Aux Knob Right = ");
+    Serial.print(RightKnob);
+    Serial.print(", Aux Knob Left = ");
+    Serial.println(LeftKnob);
+    delay(1000);                        // delay between writes to serial monitor
   }
 
-/*
- * Important! The sw confirms communication to the controller before turning on any motors.
- */
+                                                          // Use LeftKnob to map % power for drive. 20% to 80%.
+    long K_Drive_int = map(LeftKnob, 1000, 2000, 20, 80); // The "map" function only returns long. 
+                                                          // Hopefully LeftKnob is in-bounds.
+    float K_Drive_float = K_Drive_int / 100.0; 
+    float K_Strafe = min(1.2 * K_Drive_float, 1.0); 
+    float drive   = K_Drive_float * (LeftY - NEUTRAL);  
+    float strafe  = K_Strafe * (LeftX - NEUTRAL);
 
-/*    leftFrontMotor.writeMicroseconds(1600);       
-    delay(1000);
-    leftFrontMotor.writeMicroseconds(1500);       
-    delay(1000);
-    rightFrontMotor.writeMicroseconds(1400);       
-    delay(1000);
-    rightFrontMotor.writeMicroseconds(1500);       
-    delay(1000);
-    leftRearMotor.writeMicroseconds(1600);       
-    delay(1000);
-    leftRearMotor.writeMicroseconds(1500);       
-    delay(1000);
-    rightRearMotor.writeMicroseconds(1400);       
-    delay(1000);
-    rightRearMotor.writeMicroseconds(1500);       
-    delay(2000000);
-*/
-    float drive   = LeftY - NEUTRAL;
-    float strafe  = LeftX - NEUTRAL;
-    float rotate  = RightX - NEUTRAL;
-
-    rotate = K_Rotate * rotate;
-    strafe = K_Strafe * strafe;
-    drive  = K_Drive * drive;
+    long  K_Rotate_int = map(RightKnob, 1000, 2000, 20, 60);  // Use RightKnob to map K_Rotate 20% to 60%.
+    float K_Rotate_float = K_Rotate_int / 100.0; 
+    float rotate  = K_Rotate_float * (RightX - NEUTRAL);
     
-    float  front_left  = drive + strafe  + rotate;
-    float  rear_left   = drive - strafe  + rotate;
-    float  front_right = drive - strafe  - rotate;
-    float  rear_right  = drive + strafe  - rotate;
+    float front_left  = drive + strafe  + rotate;
+    float front_right = drive - strafe  - rotate;
+    float rear_left   = drive - strafe  + rotate;
+    float rear_right  = drive + strafe  - rotate;
 
-/*
+    // Cap speeds to max, +/- 500
+     front_left  = min(max(front_left,  -MAX_SPEED), MAX_SPEED);
+     front_right = min(max(front_right, -MAX_SPEED), MAX_SPEED);  
+     rear_left   = min(max(rear_left,   -MAX_SPEED), MAX_SPEED); 
+     rear_right  = min(max(rear_right,  -MAX_SPEED), MAX_SPEED); 
+
+  if (debugOn) {
     Serial.print("Drive = ");
     Serial.print(drive);
     Serial.print(", Strafe = ");
     Serial.print(strafe);
-    Serial.print(", Rotate = ");
-    Serial.println(rotate);
-*/
-  if (debugOn) {
-    Serial.print("front_left = ");
+    Serial.print(", K_Drive = ");
+    Serial.println(K_Drive_float);
+
+/*    Serial.print("front_left = ");
     Serial.print(front_left);
     Serial.print(", rear_left= ");
     Serial.print(rear_left);
@@ -131,19 +124,29 @@ void loop()
     Serial.print(front_right);
     Serial.print(", rear_right = ");
     Serial.println(rear_right);
- //   delay(500);
+*/    delay(500);  //Only if debugOn
   }
-    //Localize  to  motor
+     /*  Localize  to  motors
+     *  It isn't entirely necessary to put bounds on the output because servo.attach has min, max arguments
+     *  Something is operating very slowly in the loop.  Try updating just one of the outputs per cycle.
+     */
 
-    if (abs(front_left)> PULSE_WIDTH_DEADBAND) leftFrontMotor.writeMicroseconds(front_left + NEUTRAL);
-    if (abs(rear_left)> PULSE_WIDTH_DEADBAND) leftRearMotor.writeMicroseconds(rear_left + NEUTRAL);
-    if (abs(front_right)> PULSE_WIDTH_DEADBAND) rightFrontMotor.writeMicroseconds(NEUTRAL - front_right);
-    if (abs(rear_right)> PULSE_WIDTH_DEADBAND) rightRearMotor.writeMicroseconds(NEUTRAL - rear_right);
+        if (abs(front_left) < PULSE_WIDTH_DEADBAND) front_left = 0;
+        leftFrontMotor.writeMicroseconds(front_left + NEUTRAL);
+
+        if (abs(front_right) < PULSE_WIDTH_DEADBAND) front_right = 0;
+        rightFrontMotor.writeMicroseconds(NEUTRAL - front_right);
+
+        if (abs(rear_left) < PULSE_WIDTH_DEADBAND) rear_left = 0;   
+        leftRearMotor.writeMicroseconds(rear_left + NEUTRAL);
+
+        if (abs(rear_right) < PULSE_WIDTH_DEADBAND) rear_right = 0;
+        rightRearMotor.writeMicroseconds(NEUTRAL - rear_right);
   }
   else {
     leftFrontMotor.writeMicroseconds(NEUTRAL);
-    leftRearMotor.writeMicroseconds(NEUTRAL);
     rightFrontMotor.writeMicroseconds(NEUTRAL);
+    leftRearMotor.writeMicroseconds(NEUTRAL);
     rightRearMotor.writeMicroseconds(NEUTRAL);
     }
 }

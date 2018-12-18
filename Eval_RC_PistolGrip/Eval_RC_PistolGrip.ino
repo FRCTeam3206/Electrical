@@ -21,6 +21,9 @@ const int MAX_SPEED = 500;        // This corresponds to a range of 1000 to 2000
 const bool debugOn = false;       // The overhead required by serial and delays would be bad for RC control. 
                                   // Make it easy to disable.
 
+const bool RightReverse = true;  // Flips motor cw to ccw.
+const bool LeftReverse = false;  // Flips motor cw to ccw.
+
 // Variables
 long accelLimitedThrottle;        // Range will be +/- 500.  No real value to give it an initial value?
 
@@ -104,6 +107,9 @@ void loop()
    }
 
     if (abs(left_speed) > PULSE_WIDTH_DEADBAND){
+       if (LeftReverse) {
+         left_speed = -left_speed; 
+       }
        l_speed = map(left_speed, -500, 500, 1000, 2000); 
     }
     else{
@@ -111,7 +117,10 @@ void loop()
     }
 
     if (abs(right_speed) > PULSE_WIDTH_DEADBAND){
-       r_speed = map(right_speed, -500, 500, 1000, 2000); 
+       if (RightReverse) {
+         right_speed = -right_speed; 
+       }
+         r_speed = map(right_speed, -500, 500, 1000, 2000); 
     }
     else{
        r_speed = 1500; // This should be neutral, no speed
