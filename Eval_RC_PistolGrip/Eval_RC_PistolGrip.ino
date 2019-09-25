@@ -17,7 +17,7 @@ Servo auxMotor;
 #define K_STEERING            0.50    // speed multiplier to decrease steering sensitivity.  0.65 gives about a 4" turn radius at max throttle
  
 
-const int MAX_SPEED = 500;        // This corresponds to a range of 1000 to 2000
+int MAX_SPEED = 500;        // This corresponds to a range of 1000 to 2000
 const bool debugOn = false;       // The overhead required by serial and delays would be bad for RC control. 
                                   // Make it easy to disable.
 
@@ -26,7 +26,8 @@ const bool LeftReverse = false;  // Flips motor cw to ccw.
 
 // Variables
 long accelLimitedThrottle;        // Range will be +/- 500.  No real value to give it an initial value?
-long K_SPEED = 8.0;    // Useful range 2 < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way.
+float K_SPEED = 8.0;   // Useful range 2 < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way.
+float K_SPEED_REAL = 0.5;  // Multiplier for throttle input
 
 int left_speed;
 int right_speed;
@@ -76,22 +77,25 @@ void loop()
 
     
      // Normalize throttle and steering to the range of -500 to +500.
-     long throttleNorm = throttle - 1500;
+     long throttleNorm = (throttle - 1500) * K_SPEED_REAL ;
      long steeringNorm = steering - 1500;
-    if (debugOn) Serial.println(steeringNorm);    
-
+    if (debugOn) Serial.println(K_SPEED_REAL);    
+    
     if (aux > 1500) {
       K_SPEED = 1.0;
+      K_SPEED_REAL = 1.0;
     }
     else { 
       K_SPEED = 8.0;
+      K_SPEED_REAL = 0.5;
     }
      steeringNorm = steeringNorm * K_STEERING;                                 // Apply simple scaling to keep steering reasonable
      accelLimitedThrottle = (accelLimitedThrottle/K_SPEED*(K_SPEED-1.0)) + throttleNorm/K_SPEED;   
     
-    if (debugOn) Serial.println(K_SPEED);    
-    if (debugOn) Serial.println(steeringNorm);    
-    if (debugOn) Serial.println(K_STEERING);    
+  //  if (debugOn) Serial.println(K_SPEED);    
+    if (debugOn) Serial.print("something else!");
+ if (debugOn) Serial.println(throttleNorm);    
+  //  if (debugOn) Serial.println(K_STEERING);    
  
 
      // Mix throttle and steering inputs to obtain left & right motor speeds
