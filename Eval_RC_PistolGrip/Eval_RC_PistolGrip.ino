@@ -26,8 +26,14 @@ const bool LeftReverse = false;  // Flips motor cw to ccw.
 
 // Variables
 long accelLimitedThrottle;        // Range will be +/- 500.  No real value to give it an initial value?
-float K_SPEED = 8.0;   // Useful range 2 < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way.
-float K_SPEED_REAL = 0.5;  // Multiplier for throttle input
+float K_ACCEL = 8.0;   // Useful range 2 < 32.  16 is sluggish.  no tipping with 8.0  const accel multiplier to decrease max accel in a different way.
+float K_SPEED = 0.5;  // Multiplier for throttle input
+
+bool RSL = true;
+unsigned long t_last;
+unsigned long t_elapsed;
+unsigned long d_blink = 1000.0;
+
 
 int left_speed;
 int right_speed;
@@ -40,7 +46,9 @@ void setup()
 
   leftMotor.attach(LEFT_MOTOR_PIN); 
   rightMotor.attach(RIGHT_MOTOR_PIN);               
-//  auxMotor.attach(AUX_MOTOR_PIN);                   
+//  auxMotor.attach(AUX_MOTOR_PIN);
+  pinMode(LED_BUILTIN, OUTPUT);  // pin 13 on the arduino    
+  t_last = millis();               
 }
 
 void loop()
@@ -52,7 +60,21 @@ void loop()
   int steering = pulseIn(STEERING_PIN, HIGH);  // Read steering input.  Normally 1000 to 2000
   int aux = pulseIn(AUX_PIN, HIGH);            // Read aux input.  Either ~1000 or ~2000 (basically binary)
 
+  t_elapsed = millis() - t_last;
 
+  if (t_elapsed > d_blink) {
+    RSL = !RSL;
+    t_elapsed = 0;
+    t_last = millis();
+  }
+
+  if (RSL) {
+    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  }
+  else {
+    digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+  }
+  
 //  accelLimitedThrottle = (accelLimitedThrottle/K_SPEED*(K_SPEED-1.0)) + throttle/K_SPEED;   
 
 /*  
@@ -77,20 +99,22 @@ void loop()
 
     
      // Normalize throttle and steering to the range of -500 to +500.
-     long throttleNorm = (throttle - 1500) * K_SPEED_REAL ;
+     long throttleNorm = (throttle - 1500) * K_SPEED ;
      long steeringNorm = steering - 1500;
-    if (debugOn) Serial.println(K_SPEED_REAL);    
+    if (debugOn) Serial.println(K_SPEED);    
     
     if (aux > 1500) {
+      K_ACCEL = 1.0;
       K_SPEED = 1.0;
-      K_SPEED_REAL = 1.0;
+      d_blink = 7.0;  //blink real fast, rave 
     }
     else { 
-      K_SPEED = 8.0;
-      K_SPEED_REAL = 0.5;
+      K_ACCEL = 8.0;
+      K_SPEED = 0.7;
+      d_blink = 350.0; //blink normal speed
     }
      steeringNorm = steeringNorm * K_STEERING;                                 // Apply simple scaling to keep steering reasonable
-     accelLimitedThrottle = (accelLimitedThrottle/K_SPEED*(K_SPEED-1.0)) + throttleNorm/K_SPEED;   
+     accelLimitedThrottle = (accelLimitedThrottle/K_ACCEL*(K_ACCEL-1.0)) + throttleNorm/K_ACCEL;   
     
   //  if (debugOn) Serial.println(K_SPEED);    
     if (debugOn) Serial.print("something else!");
