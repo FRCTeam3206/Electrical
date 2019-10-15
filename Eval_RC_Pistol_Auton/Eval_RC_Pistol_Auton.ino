@@ -34,11 +34,13 @@ unsigned long t_last;
 unsigned long t_elapsed;
 unsigned long d_blink = 1000.0;
 
+char stateRobot = 'A';
 
 int left_speed;
 int right_speed;
 int l_speed; 
 int r_speed;
+int NEUTRAL = 1500;
 
 void setup()                        
 {
@@ -76,7 +78,55 @@ void loop()
   }
   
 //  accelLimitedThrottle = (accelLimitedThrottle/K_SPEED*(K_SPEED-1.0)) + throttle/K_SPEED;   
-
+ 
+/*  stateRobot controls robot through autonomous states, last state is driver controlled
+ *   
+ *   To Do:  improve responsiveness by replacing delay statements
+ */
+  
+  switch (stateRobot) {
+    case 'A':                           //motor check
+        if (throttle > 1800) {
+          driveRobot (0.2,0.2,250);
+          neutralRobot();
+          delay(2000);
+          stateRobot = 'B';
+        }
+        else {
+          stateRobot = 'Z';
+        }
+        break;
+    case 'B':                         //forward 10ish ft
+        driveRobot (0.2,0.2,3500);   //left speed (range of (-1,1) ), right speed (range of (-1,1) ), duration
+        neutralRobot();
+        delay(2000);
+        stateRobot = 'C';
+        break;  
+    case 'C':                         //backward 10ish ft
+        driveRobot (-0.2,-0.2,3500);
+        neutralRobot();
+        delay(5000);
+        stateRobot = 'D';
+        break;
+    case 'D':                          //turn left 90 degrees ish
+        driveRobot (0.3,-0.2,2200);
+        neutralRobot();
+        delay(5000);
+        stateRobot = 'E';
+        break;
+    case 'E':                         //backward 10ish ft
+        driveRobot (-0.2,-0.2,3500);
+        neutralRobot();
+        delay(5000);
+        stateRobot = 'Y';
+        break;
+    case 'Y':
+        //do something here
+        stateRobot = 'Z';
+        break;
+    default: 
+    //do something here
+  
 /*  
  *   Print RC pulse widths to Serial Monitor
  */
@@ -168,5 +218,18 @@ void loop()
     }
 
     leftMotor.writeMicroseconds(l_speed);       
-    rightMotor.writeMicroseconds(r_speed);       
+    rightMotor.writeMicroseconds(r_speed);  
+      break;
+  } //last of the case statement for driver control     
+}
+
+void driveRobot(float L, float R, float t) {
+        leftMotor.writeMicroseconds(-500 * L + 1500);       //sets motor speed range (-1,1) for both motors for duration t
+        rightMotor.writeMicroseconds(500 * R + 1500);       //does not turn motors off
+        delay(t);
+}
+
+void neutralRobot() {
+        leftMotor.writeMicroseconds(NEUTRAL);       //sets speed of both drive motors to zero
+        rightMotor.writeMicroseconds(NEUTRAL);
 }
