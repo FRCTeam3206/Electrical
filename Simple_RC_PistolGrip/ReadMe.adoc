@@ -1,7 +1,7 @@
-:Author: crschardt
+:Author: Craig Schardt
 :Email: crschardt@fastem.com
-:Date: 02/11/2021
-:Revision: 0.1
+:Date: 01/11/2021
+:Revision: 0.1alpha
 :License: Public Domain
 
 = Project: {Project}
