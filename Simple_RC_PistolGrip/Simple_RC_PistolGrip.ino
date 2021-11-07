@@ -1,14 +1,16 @@
-// Servo - Version: Latest 
 #include <Servo.h>
 
 /*
-Minimal program to control a robot with a 
+  Minimal program to control a robot with a RC Pistol Grip
 */
 
 /* Pins used for inputs from the RC receiver */
 #define STEERING_IN      5  // steering channel from RC receiver
 #define THROTTLE_IN      4  // throttle channel from RC receiver
 #define AUX_IN           6  // aux channel from RC receiver
+
+#define CENTER        1500  // value (in  ms) when the controller is centered
+#define RANGE          500  // value (in  ms) of the range from the RC controller
 
 /* Pins used for outputs to the motor controller */
 #define LEFT_MOTOR_OUT    9  // confirmed pin  9 is pwm output
@@ -24,55 +26,102 @@ unsigned long t_last;
 unsigned long t_next;
 unsigned long t_delta;
 
-int throttle = 0;
-int steering = 0;
-int aux = 0;
+/* loop counter variable */
+unsigned long counter = 0;
+
+/* variables for RC inputs */
+unsigned long throttle = 0;
+unsigned long steering = 0;
+unsigned long aux = 0;
+
+/* variables for conversion of inputs to outputs */
+float forward;
+float rotate;
+
+/* variables for motor output */
+unsigned long left_power = CENTER;
+unsigned long right_power = CENTER;
 
 
 void setup() {
   Serial.begin(9600);
-  
+
   // Configure input pins
   pinMode(STEERING_IN, INPUT);
   pinMode(THROTTLE_IN, INPUT);
   pinMode(AUX_IN, INPUT);
-  
-  // Attach motors to their outputs
+
+  // Attach motors to their output pins
   left_motor.attach(LEFT_MOTOR_OUT);
-  left_motor.writeMicroseconds(1500); // set to 1500, which is no power
   right_motor.attach(RIGHT_MOTOR_OUT);
-  right_motor.writeMicroseconds(1500); // set to 1500, which is no power
   
+  // initialize the motors to no power
+  left_motor.writeMicroseconds(CENTER); // set to 1500, which is no power
+  right_motor.writeMicroseconds(CENTER); // set to 1500, which is no power
+
   t_last = millis();
 }
 
+
 void loop() {
-  // Read the input pins. This takes about 15 ms/pin.
-  // Note: Reading pins that aren't connected causes long delays.
-  throttle = pulseIn(THROTTLE_IN, HIGH);
-  steering = pulseIn(STEERING_IN, HIGH);
-  //int aux = pulseIn(AUX_IN, HIGH);
+  /* Read the input pins. This takes about 15 ms/pin.
+     Note: Reading pins that aren't connected causes long delays.
+           Setting the timeout (thrid parameter) helps to limit the delay,
+           but can lead to missed reads if set too low.
+  */
+  throttle = pulseIn(THROTTLE_IN, HIGH, 50000);
+  steering = pulseIn(STEERING_IN, HIGH, 50000);
+  //aux = pulseIn(AUX_IN, HIGH, 50000);
+
+  /* Normalize the inputs to the range of -1.0 to 1.0 */
+  forward = -float(throttle - CENTER)/RANGE;
+  rotate = float(steering - CENTER)/RANGE;
+
+  forward = constrain(forward, -1.0, 1.0);
+  rotate = constrain(rotate, -1.0, 1.0);
   
-  // Convert the inputs into the correct motor signals
+  /* Convert to motor signals */
+  left_power  = (unsigned long)((forward + rotate)*RANGE + CENTER);
+  right_power = (unsigned long)((forward - rotate)*RANGE + CENTER);
   
-  // Send power to motors
-  left_motor.writeMicroseconds(throttle);
-  right_motor.writeMicroseconds(throttle);
+  /* make sure that the output values are in the proper range */
+  left_power = constrain(left_power, CENTER - RANGE, CENTER + RANGE);
+  right_power = constrain(right_power, CENTER - RANGE, CENTER + RANGE);
   
-  // Write diagnostic information
+  /* Send power to motors */
+  left_motor.writeMicroseconds(left_power);
+  right_motor.writeMicroseconds(right_power);
+  
+  /* Optionally write diagnostic information */
+  counter++;
+  debug_output(counter%2);
+
+}
+
+void debug_output(bool show_inputs) {
+  // Write diagnostic information.
+  // show_inputs-indicates if this should show the input or output variables.
+  //             this helps avoiod overloading the serial buffer
   t_next = millis();
-  t_delta = t_next-t_last;
+  t_delta = t_next - t_last;
 
   Serial.print(t_delta);
   Serial.print(",");
-  Serial.print(throttle);
+  if (show_inputs) {
+    Serial.print("In: ");
+    Serial.print(throttle);
+    Serial.print(",");
+    Serial.print(steering);
+    Serial.print(",");
+    Serial.print(aux);
+  } else {
+    Serial.print("Out:");
+    Serial.print(left_power);
+    Serial.print(",");
+    Serial.print(right_power);
+  }
   Serial.print(",");
-  Serial.print(steering);
-  Serial.print(",");
-  //Serial.print(aux);
-  //Serial.print(",");
-  Serial.println(millis()-t_next);
-  
-  t_last = millis();
+  Serial.println(millis() - t_next);
 
+  t_last = millis();
 }
