@@ -9,8 +9,8 @@
 #define THROTTLE_IN      4  // throttle channel from RC receiver
 #define AUX_IN           6  // aux channel from RC receiver
 
-#define CENTER        1500  // value (in  ms) when the controller is centered
-#define RANGE          500  // value (in  ms) of the range from the RC controller
+#define CENTER        1500.0  // value (in  ms) when the controller is centered
+#define RANGE          500.0  // value (in  ms) of the range from the RC controller
 
 /* Pins used for outputs to the motor controller */
 #define LEFT_MOTOR_OUT    9  // confirmed pin  9 is pwm output
@@ -25,9 +25,6 @@ Servo right_motor;
 unsigned long t_last;
 unsigned long t_next;
 unsigned long t_delta;
-
-/* loop counter variable */
-unsigned long counter = 0;
 
 /* variables for RC inputs */
 unsigned long throttle = 0;
@@ -74,8 +71,8 @@ void loop() {
   //aux = pulseIn(AUX_IN, HIGH, 50000);
 
   /* Normalize the inputs to the range of -1.0 to 1.0 */
-  forward = -float(throttle - CENTER)/RANGE;
-  rotate = float(steering - CENTER)/RANGE;
+  forward = -float(throttle - CENTER)/float(RANGE);
+  rotate = float(steering - CENTER)/float(RANGE);
 
   forward = constrain(forward, -1.0, 1.0);
   rotate = constrain(rotate, -1.0, 1.0);
@@ -93,35 +90,50 @@ void loop() {
   right_motor.writeMicroseconds(right_power);
   
   /* Optionally write diagnostic information */
-  counter++;
-  debug_output(counter%2);
+  debug_output();
 
 }
 
-void debug_output(bool show_inputs) {
+
+void debug_output() {
   // Write diagnostic information.
   // show_inputs-indicates if this should show the input or output variables.
   //             this helps avoiod overloading the serial buffer
   t_next = millis();
   t_delta = t_next - t_last;
 
-  Serial.print(t_delta);
-  Serial.print(",");
-  if (show_inputs) {
+  // Only send data to the Serial port if there is enough space in the buffer
+  // to avoid blocking the code waiting for the Serial buffer
+  if (Serial.availableForWrite()>60) {
+    Serial.print("Tloop:");
+    Serial.print(t_delta);
+    Serial.println();
+
     Serial.print("In: ");
     Serial.print(throttle);
     Serial.print(",");
     Serial.print(steering);
     Serial.print(",");
     Serial.print(aux);
-  } else {
+    Serial.println();
+
+    Serial.print("Nrm:");
+    Serial.print(forward);
+    Serial.print(",");
+    Serial.print(rotate);
+    Serial.println();
+
     Serial.print("Out:");
     Serial.print(left_power);
     Serial.print(",");
     Serial.print(right_power);
+    Serial.println();
+
+    Serial.print("Tdbg:");
+    Serial.print(millis() - t_next);
+    Serial.println();
+    Serial.println();
   }
-  Serial.print(",");
-  Serial.println(millis() - t_next);
 
   t_last = millis();
 }
