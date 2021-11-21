@@ -41,8 +41,6 @@ unsigned long right_power = CENTER;
 
 
 void setup() {
-  Serial.begin(9600);
-
   // Configure input pins
   pinMode(STEERING_IN, INPUT);
   pinMode(THROTTLE_IN, INPUT);
@@ -56,6 +54,8 @@ void setup() {
   left_motor.writeMicroseconds(CENTER); // set to 1500, which is no power
   right_motor.writeMicroseconds(CENTER); // set to 1500, which is no power
 
+  // For debugging output
+  Serial.begin(9600);
   t_last = millis();
 }
 
@@ -71,12 +71,18 @@ void loop() {
   //aux = pulseIn(AUX_IN, HIGH, 50000);
 
   /* Normalize the inputs to the range of -1.0 to 1.0 */
-  forward = -float(throttle - CENTER)/float(RANGE);
-  rotate = float(steering - CENTER)/float(RANGE);
-
-  forward = constrain(forward, -1.0, 1.0);
-  rotate = constrain(rotate, -1.0, 1.0);
+  if (throttle == 0) {
+    forward = 0.0;  // the pulseIn command failed
+  } else {
+    forward = -float(throttle - CENTER)/float(RANGE);
+  }
   
+  if (steering == 0) {
+    rotate = 0.0;  // the pulseIn command failed
+  } else {
+    rotate = float(steering - CENTER)/float(RANGE);
+  }
+    
   /* Convert to motor signals */
   left_power  = (unsigned long)((forward + rotate)*RANGE + CENTER);
   right_power = (unsigned long)((forward - rotate)*RANGE + CENTER);
