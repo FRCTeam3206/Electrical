@@ -17,6 +17,8 @@
 #define RIGHT_MOTOR_OUT  10  // confirmed pin 10 is pwm output
 // #define AUX_MOTOR_OUT    11  // confirmed pin 11 is pwm output
 
+#define DBG_DELAY       500  // minimum ms between debug writes
+
 /* Motors */
 Servo left_motor;
 Servo right_motor;
@@ -25,6 +27,7 @@ Servo right_motor;
 unsigned long t_last;
 unsigned long t_next;
 unsigned long t_delta;
+unsigned long t_dbg = DBG_DELAY;
 
 /* variables for RC inputs */
 unsigned long throttle = 0;
@@ -109,8 +112,11 @@ void debug_output() {
   t_delta = t_next - t_last;
 
   // Only send data to the Serial port if there is enough space in the buffer
-  // to avoid blocking the code waiting for the Serial buffer
-  if (Serial.availableForWrite()>60) {
+  // to avoid blocking the code waiting for the Serial buffer. The code also 
+  // waits a minimum interval (DBG_DELAY) between writes to keep the output readable
+  if (Serial.availableForWrite()>60 && t_dbg > millis()) {
+    t_dbg = millis() + DBG_DELAY;
+
     Serial.print("Tloop:");
     Serial.print(t_delta);
     Serial.println();
