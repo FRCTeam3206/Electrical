@@ -69,8 +69,8 @@ void loop() {
            Setting the timeout (thrid parameter) helps to limit the delay,
            but can lead to missed reads if set too low.
   */
-  throttle = pulseIn(THROTTLE_IN, HIGH, 50000);
-  steering = pulseIn(STEERING_IN, HIGH, 50000);
+  throttle = pulseIn(THROTTLE_IN, HIGH );
+  steering = pulseIn(STEERING_IN, HIGH );
   //aux = pulseIn(AUX_IN, HIGH, 50000);
 
   /* Normalize the inputs to the range of -1.0 to 1.0 */
