@@ -114,8 +114,8 @@ void debug_output() {
   // Only send data to the Serial port if there is enough space in the buffer
   // to avoid blocking the code waiting for the Serial buffer. The code also 
   // waits a minimum interval (DBG_DELAY) between writes to keep the output readable
-  if (Serial.availableForWrite()>60 && t_dbg > millis()) {
-    t_dbg = millis() + DBG_DELAY;
+  if (Serial.availableForWrite()>60 && millis() > t_dbg) {
+    t_dbg += DBG_DELAY;
 
     Serial.print("Tloop:");
     Serial.print(t_delta);
