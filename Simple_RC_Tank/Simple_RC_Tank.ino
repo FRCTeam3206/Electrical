@@ -17,7 +17,7 @@
 #define RIGHT_MOTOR_OUT  10  // confirmed pin 10 is pwm output
 // #define AUX_MOTOR_OUT    11  // confirmed pin 11 is pwm output
 
-#define DBG_DELAY       500  // minimum ms between debug writes
+#define DBG_DELAY      1000  // minimum ms between debug writes
 
 /* Motors */
 Servo left_motor;
