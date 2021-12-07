@@ -77,7 +77,7 @@ void loop() {
   if (right_stick == 0) {
     right = 0.0;  // the pulseIn command failed
   } else {
-    right = -float(right_stick - CENTER)/float(RANGE);
+    right = float(right_stick - CENTER)/float(RANGE);
   }
   
   if (left_stick == 0) {
